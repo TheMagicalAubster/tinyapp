@@ -16,6 +16,12 @@ app.get("/urls", (req, res) => {
     res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
 });
 
+app.get("/urls/:shortURL", (req, res) => {
+    shortURL = req.params.shortURL;
+    longURL = urlDatabase[shortURL];
+    let templateVars = { shortURL, longURL }; 
+    res.render("urls_show", templateVars); 
+});
 
 app.get("/", (req, res) => {   
     res.send("Hello");
