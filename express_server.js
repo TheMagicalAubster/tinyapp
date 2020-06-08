@@ -10,7 +10,14 @@ const urlDatabase = {
     "9sm5xK": "http://www.google.com"
 };
 
-app.get("/", (req, res) => {
+//this is what a route handler is
+app.get("/urls", (req, res) => {
+    let templateVars = { urls: urlDatabase }; //this is the urlDatabase from above
+    res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
+});
+
+
+app.get("/", (req, res) => {   
     res.send("Hello");
 });
 
