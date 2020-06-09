@@ -29,6 +29,10 @@ app.get("/urls/new", (req, res) => {
     res.render("urls_new");
 });
 
+// app.get("/urls/:shortURL/edit", (req, res) => {
+//     res.render("urls_edit");
+// });
+
 app.get("/u/:shortURL", (req, res) => {
     shortURL = req.params.shortURL;
     const longURL = urlDatabase[shortURL];
@@ -61,9 +65,6 @@ app.get("/urls.json", (req, res) => {
 
   //when someone submits a url it goes to this one
 app.post("/urls", (req, res) => {
-    
-    //Everything the person submits in the form is here
-    console.log(req.body);  // Log the POST request body to the console
     let shortURL = generateRandomString();
     urlDatabase[shortURL] = req.body.longURL;
     res.redirect(`/urls/${shortURL}`);
@@ -75,6 +76,16 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     delete urlDatabase[shortURL];
     res.redirect('/urls'); 
   });
+
+  
+app.post("/urls/:shortURL", (req, res) => {
+    const shortURL = req.params.shortURL;
+    urlDatabase[shortURL] = req.body.longURL;
+    console.log(shortURL);
+    res.redirect(`/urls`);
+    // console.log("Hello");
+  });
+
 
 app.listen(PORT, () => {
     console.log(`Example app listening on port ${PORT}!`);
