@@ -17,17 +17,12 @@ const urlDatabase = {
     "9sm5xK": "http://www.google.com"
 };
 
-//when someone submits a url it goes to this one
-app.post("/urls", (req, res) => {
-    
-    //Everything the person submits in the form is here
-    console.log(req.body);  // Log the POST request body to the console
+  app.get("/urls/:shortURL/urls", (req, res) => {
+    // let templateVars = { urls: urlDatabase }; //this is the urlDatabase from above
+    // console.log('urls_index: ', urls_index);
+    res.render("urls_index");
+ });
 
-    let shortURL = generateRandomString();
-    urlDatabase[shortURL] = req.body.longURL;
-    res.redirect(`/urls/${shortURL}`);
-    // res.send(urlDatabase[shortURL]);         // Respond with 'Ok' (we will replace this)
-  });
 
 //this is what a route handler is
 app.get("/urls/new", (req, res) => {
@@ -62,6 +57,23 @@ app.get("/urls.json", (req, res) => {
 
   app.get("/hello", (req, res) => {
     res.send("<html><body>Hello <b>World</b></body></html>\n");
+  });
+
+  //when someone submits a url it goes to this one
+app.post("/urls", (req, res) => {
+    
+    //Everything the person submits in the form is here
+    console.log(req.body);  // Log the POST request body to the console
+    let shortURL = generateRandomString();
+    urlDatabase[shortURL] = req.body.longURL;
+    res.redirect(`/urls/${shortURL}`);
+
+  });
+
+app.post("/urls/:shortURL/delete", (req, res) => {
+    const shortURL = req.params.shortURL;
+    delete urlDatabase[shortURL];
+    res.redirect('/urls'); 
   });
 
 app.listen(PORT, () => {
