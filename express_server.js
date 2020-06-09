@@ -25,17 +25,20 @@ app.post("/urls", (req, res) => {
 
     let shortURL = generateRandomString();
     urlDatabase[shortURL] = req.body.longURL;
-    //localhost:8080/urls/9sm5xK
-
-    //You'll probably do res.redirect(/urls/shortURL) here
-    res.send("Ok");         // Respond with 'Ok' (we will replace this)
+    res.redirect(`/urls/${shortURL}`);
+    // res.send(urlDatabase[shortURL]);         // Respond with 'Ok' (we will replace this)
   });
 
 //this is what a route handler is
 app.get("/urls/new", (req, res) => {
-
     res.render("urls_new");
 });
+
+app.get("/u/:shortURL", (req, res) => {
+    shortURL = req.params.shortURL;
+    const longURL = urlDatabase[shortURL];
+    res.redirect(longURL);
+  });
 
 app.get("/urls", (req, res) => {
     let templateVars = { urls: urlDatabase }; //this is the urlDatabase from above
