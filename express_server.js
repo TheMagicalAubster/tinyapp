@@ -10,20 +10,30 @@ function generateRandomString() {
     let funkyURL = Math.random().toString(20).substr(2, 6); //thanks to help from dev.to!
     return funkyURL;
     }
+  
 
-generateRandomString();    
 const urlDatabase = {
     "b2xVn2": "http://www.lighthouselabs.ca",
     "9sm5xK": "http://www.google.com"
 };
 
+//when someone submits a url it goes to this one
 app.post("/urls", (req, res) => {
+    
+    //Everything the person submits in the form is here
     console.log(req.body);  // Log the POST request body to the console
+
+    let shortURL = generateRandomString();
+    urlDatabase[shortURL] = req.body.longURL;
+    //localhost:8080/urls/9sm5xK
+
+    //You'll probably do res.redirect(/urls/shortURL) here
     res.send("Ok");         // Respond with 'Ok' (we will replace this)
   });
 
 //this is what a route handler is
 app.get("/urls/new", (req, res) => {
+
     res.render("urls_new");
 });
 
