@@ -58,10 +58,10 @@ const urlDatabase = {
 
 app.get("/urls/new", (req, res) => {
     //if someone isn't logged in here, redirect to login page
-    const username = req.cookies.username;
-    console.log("username", username);
+    const name = req.cookies.name;
+    console.log("name", name);
 
-    if (!username) {
+    if (!name) {
         return res.redirect('/login');
     }
     res.render("urls_new");
@@ -69,8 +69,9 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
     const user = users[req.cookies.userKey]
-    console.log("user.name ", user.name);
-    const templateVars = { urls: urlDatabase, username: user.name };
+    console.log("req.cookies ", req.cookies);
+    console.log("user  ", user);
+    const templateVars = { urls: urlDatabase, user };
     const shortURL = req.params.shortURL;
    
     const longURL = urlDatabase[shortURL].longURL;
@@ -80,13 +81,21 @@ app.get("/u/:shortURL", (req, res) => {
   });
 
 app.get("/urls", (req, res) => {   
-    const test = Object.keys(req.cookies).length;
-    if (test !== 0) {
-        const user = users[req.cookies.userKey]
-        const templateVars = { urls: urlDatabase, username: user.name };
-        res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
+    // const test = Object.keys(req.cookies).length;
+    const user = users[req.cookies.userID];
+    // console.log('user ', user);
+    console.log("req.cookies.name ", req.cookies.name);
+    if (user) {
+
+        console.log("user is: ", user);
+        console.log("req.cookies ", req.cookies);
+
+        const templateVars = { urls: urlDatabase, user }; //cannot read property 'name' of undefined  , username: user.name
+        console.log("templateVars ", templateVars);
+
+        res.render("urls_index", templateVars); 
     } else {
-        let templateVars = { urls: urlDatabase }; //this is the urlDatabase from above
+        let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
         res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
     }
 });
@@ -96,13 +105,13 @@ app.get("/urls/:shortURL", (req, res) => {
     const shortURL = req.params.shortURL;
 
     console.log("shortURL" , shortURL);
-    const username = req.cookies.username;
-    console.log("username", username);
+    const name = req.cookies.name;
+    console.log("name", name);
 
     const longURL = urlDatabase[shortURL];
     // let templateVars = { shortURL, longURL }; 
     const user = users[req.cookies.userKey]
-    const templateVars = { shortURL, url: urlDatabase[shortURL], username: user.name }
+    const templateVars = { shortURL, url: urlDatabase[shortURL], user }
     console.log("templateVars ", templateVars);
     res.render("urls_show", templateVars); 
 });
@@ -112,12 +121,12 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    const templateVars = { username: "" }
+    const templateVars = { user: undefined };
     res.render('login', templateVars);
 });
 
 app.get("/registration", (req, res) => {
-    const templateVars = { username: "" };
+    const templateVars = { user: undefined };
     res.render("registration", templateVars);
 });
 
@@ -155,9 +164,12 @@ app.post("/registration", (req, res) => {
     const password = req.body.password;
     const name = req.body.name;
 
+
+    console.log('req.body info: ', email, password, name);
+
     let confirmedUser;
 
-    for (let userID in users) {
+    for (const userID in users) {
         if (users[userID].email === "") {
              return res.status(400).send('email cannot be empty');
         }
@@ -172,26 +184,32 @@ app.post("/registration", (req, res) => {
         return res.status(400).send('failure - username taken');
     }
     
-    const id = generateRandomString();
+    const userID = generateRandomString();
+    console.log("userID ", userID);
     const newUser = {
-        id: id, 
+        id: userID, 
         name: name,
         email: email,
         password: password
     }
-    users[id] = newUser;
-    const templateVars = { newUser: id }
+
+    console.log('newUser ', newUser);
+    users[userID] = newUser;
+    // const templateVars = { newUser: id }
+
+    console.log("users[userID].id" , users[userID].id);
     
-    console.log("templateVars ", templateVars);
-    res.cookie('username', newUser.email);
+    // console.log("templateVars ", templateVars);
+    res.cookie('userID', userID);
+    res.cookie('name', name);
     res.redirect(`/urls`);
 });
 
 app.post("/login", (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
-    const username = req.body.name;
-    console.log("username ", username);
+    const name = req.body.name;
+    console.log("name ", name);
     // const name = req.body.name;
 
     let confirmedUser;
@@ -209,23 +227,24 @@ app.post("/login", (req, res) => {
         return res.status(403).send('Wrong combination, please try again.');
     }
 
-    const cookieId = generateRandomString();
+    const userId = generateRandomString();
 
-    confirmedUser.cookieId = cookieId;
+    confirmedUser.userID = userID;
     
-    res.cookie('cookieId', cookieId);
+    res.cookie('userID', userID);
     res.cookie('userKey', confirmedUserKey);
-    res.cookie('username', username);
+    res.cookie('name', name);
     res.redirect(`/urls`);
 });
 
 app.post("/logout", (req, res) => {
-    const cookieId = req.cookies.cookieId;
+    console.log("req.cookies.userID ",req.cookies.userID);
+    const userID = req.cookies.userID;
     const userKey = req.cookies.userKey
-    const username = req.cookies.name;
-    res.clearCookie('cookieId', cookieId);
+    const name = req.cookies.name;
+    res.clearCookie('userID', userID);
     res.clearCookie('userKey', userKey);
-    res.clearCookie('username', username);
+    res.clearCookie('name', name);
     res.redirect(`/urls`);
 });
 

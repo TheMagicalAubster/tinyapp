@@ -9,10 +9,10 @@
         <div class="navbar-nav">
           <a class="nav-item nav-link" href="/urls">My URLs</a>
           <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-          <% if (typeof(username) !== "undefined" ) { %>
+          <% if (user) { %>
             <form class="form-inline" method="POST" action="/logout" >
                 <div style="width: 200px; left:100px; position:relative" >
-                    <h3>Hello <%= username %></h3>
+                    <h3>Hello <%= user.email %></h3>
                     <button type="submit" class="btn btn-primary">Logout</button> 
                   
             <% } else { %>
