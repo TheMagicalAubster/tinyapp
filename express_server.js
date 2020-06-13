@@ -1,285 +1,228 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
-// const cookieSession = require('cookie-session');
+const getUserByEmail = require('./helpers');
+const cookieSession = require('cookie-session');
 const morgan = require('morgan');
-
+const bcrypt = require('bcrypt');
+const password = '1234';
+const hashedPassword = bcrypt.hashSync(password, 10);
 const app = express();
 const PORT = 8080;
 
-app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: false}));
 app.set("view engine", "ejs");
-// app.use(cookieSession({
-//     //something here, currently empty
-//     key1: "something1",
-//     key2: ["something2", "something2"]
-// }));
 app.use(morgan('dev'));
-
-
+app.use(cookieSession({
+  name: "CookieCookie",
+  keys: ["secret", "LivinLaVidaRotation"]
+}));
 
 function generateRandomString() {
-    let funkyURL = Math.random().toString(20).substr(2, 6); //thanks to help from dev.to!
-    return funkyURL;
-    }
-
-function urlsForUser(userID) {
-    for(const key in urlDatabase) {
-        // console.log("urlDatabase.key.userID ", urlDatabase[key].userID);
-        if (urlDatabase[key].userID === "user2RandomID") {
-            return true;
-        }
-    }
+  let funkyURL = Math.random().toString(20).substr(2, 6); 
+  return funkyURL;
 }
 
-const users = {
-"userRandomID": {
-    id: "userRandomID",
-    name: "name1",
-    email: "user@example.com",
-    password: "purple-monkey-dinosaur"
-  },
-"user2RandomID": {
-    id: "user2RandomID",
-    name: "name2",
-    email: "user2@example.com",
-    password: "1234"
+function urlsForUser(userID) {
+  for (const key in urlDatabase) {
+    if (urlDatabase[key].userID === "user2RandomID") {
+      return true;
+    }
   }
 }
 
-
-// const urlDatabase = {
-//     "b2xVn2": "http://www.lighthouselabs.ca",
-//     "9sm5xK": "http://www.google.com"
-// };
-
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    name: "name1",
+    email: "user@example.com",
+    password: password
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    name: "name2",
+    email: "user2@example.com",
+    password: password
+  }
+};
 
 const urlDatabase = {
-    b6UTxQ: { longURL: "https://www.tsn.ca", userID: "user2RandomID" },
-    i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
-  };
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "user2RandomID" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
+};
 
-  app.get("/urls/:shortURL/urls", (req, res) => {
+app.get("/urls/:shortURL/urls", (req, res) => {
   
-    res.render("urls_index");
- });
+  res.render("urls_index");
+});
 
 app.get("/urls/new", (req, res) => {
-    //if someone isn't logged in here, redirect to login page
-    const name = req.cookies.name;
-    const user = users[req.cookies.userID];
-    // console.log("name", name);
+  //if someone isn't logged in here, redirect to login page
+  const name = req.session.name;
+  const user = users[req.session.userID];
+  // console.log("name", name);
 
-    if (!name) {
-        return res.redirect('/login');
-    }
+  if (!name) {
+    return res.redirect('/login');
+  }
 
-    let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
-    res.render("urls_new", templateVars);
+  let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
+  res.render("urls_new", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-    const user = users[req.cookies.userID]
-    // console.log("req.cookies ", req.cookies);
-    // console.log("user  ", user);
-    const templateVars = { urls: urlDatabase, user };
-    const shortURL = req.params.shortURL;
-   
-    const longURL = urlDatabase[shortURL].longURL;
-    // console.log("longURL:: ", longURL);
+  const shortURL = req.params.shortURL;
+  const longURL = urlDatabase[shortURL].longURL;
 
-    res.redirect(longURL);
-  });
-
-app.get("/urls", (req, res) => {   
-    const name = req.cookies.name;
-    const user = users[req.cookies.userID];
-    const shortURL = req.params.shortURL;
-    const userID = req.cookies.userID;
-    const longURL = urlDatabase[shortURL];
-    console.log("req.cookies.userID", req.cookies.userID);
-    
-    console.log(urlsForUser(userID));
-    // console.log("shortURL ", shortURL);
-    // console.log('user ', user);
-    if (urlsForUser(userID)) {
-        
-        const templateVars = { urls: urlDatabase, user }; //cannot read property 'name' of undefined  , username: user.name
-        console.log("templateVars ", templateVars);
-        
-        res.render("urls_index", templateVars); 
-    } else {
-        // let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
-        // res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
-        res.redirect('/login');
-    }
+  res.redirect(longURL);
 });
 
+app.get("/urls", (req, res) => {
+  const user = users[req.session.userID];
+  const userID = req.session.userID;
+    
+  if (urlsForUser(userID)) {
+    const templateVars = { urls: urlDatabase, user }; 
+        
+    res.render("urls_index", templateVars);
+  } else {
+    res.redirect('/login');
+  }
+});
 
 app.get("/urls/:shortURL", (req, res) => {
-    const shortURL = req.params.shortURL;
-    const name = req.cookies.name;
-    const longURL = urlDatabase[shortURL];
-    const user = users[req.cookies.userKey]
-    const templateVars = { shortURL, url: urlDatabase[shortURL], user }
-    // console.log("templateVars ", templateVars);
-    res.render("urls_show", templateVars); 
+  const shortURL = req.params.shortURL;
+  const user = users[req.session.userID];
+  const templateVars = { shortURL, url: urlDatabase[shortURL], user };
+
+  res.render("urls_show", templateVars);
 });
 
 app.get("/urls.json", (req, res) => {
-    res.json(urlDatabase);
+  res.json(urlDatabase);
 });
 
 app.get('/login', (req, res) => {
-    const templateVars = { user: undefined };
-    res.render('login', templateVars);
+  const templateVars = { user: undefined };
+  res.render('login', templateVars);
 });
 
 app.get("/registration", (req, res) => {
-    const templateVars = { user: undefined };
-    res.render("registration", templateVars);
+  const templateVars = { user: undefined };
+  res.render("registration", templateVars);
 });
 
-app.get("/", (req, res) => {   
-    res.send("Hello");
+app.get("/", (req, res) => {
+  res.send("Hello");
 });
 
 app.get("/hello", (req, res) => {
-    res.send("<html><body>Hello <b>World</b></body></html>\n");
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.post("/urls", (req, res) => {
-    let shortURL = generateRandomString();
-    urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.cookies.userKey } ;
-    res.redirect(`/urls/${shortURL}`);
+  let shortURL = generateRandomString();
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.userKey };
+  res.redirect(`/urls/${shortURL}`);
     
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-    const shortURL = req.params.shortURL;
-    const userID = req.cookies.userID;
+  const shortURL = req.params.shortURL;
+  const userID = req.session.userID;
     
-    if (urlsForUser(userID)) {
-        delete urlDatabase[shortURL];
+  if (urlsForUser(userID)) {
+    delete urlDatabase[shortURL];
         
-    } else {
-        // let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
-        // res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
-        res.redirect('/login');
-    }
-    res.redirect('/urls'); 
+  } else {
+    // let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
+    // res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
+    res.redirect('/login');
+  }
+  res.redirect('/urls');
 });
 
 app.post("/urls/:shortURL", (req, res) => {
+  const shortURL = req.params.shortURL;
+  urlDatabase[shortURL] = req.body.longURL;
 
-    const shortURL = req.params.shortURL;
-    urlDatabase[shortURL] = req.body.longURL;
-
-    // console.log("shortURL ", shortURL);
-    console.log("urlDatabase[shortURL] ", urlDatabase[shortURL]);
-    res.redirect(`/urls`);
-    // console.log("Hello");
+  res.redirect(`/urls`);
 });
 
 app.post("/registration", (req, res) => {
-    const email = req.body.email;
-    const password = req.body.password;
-    const name = req.body.name;
+  const email = req.body.email;
+  const password = req.body.password; //password coming from input
+  const name = req.body.name;
 
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt);
 
-    console.log('req.body info: ', email, password, name);
+  let confirmedUser;
 
-    let confirmedUser;
-
-    for (const userID in users) {
-        if (users[userID].email === "") {
-             return res.status(400).send('email cannot be empty');
-        }
-        if (confirmedUser) {
-            return res.status(400).send('email already in use');
-       }
-        if (users[userID].email === email) {
-            confirmedUser = users[userID];
-        }
+  for (const userID in users) {
+    if (users[userID].email === "") {
+      return res.status(400).send('email cannot be empty');
     }
     if (confirmedUser) {
-        return res.status(400).send('failure - username taken');
+      return res.status(400).send('email already in use');
     }
-    
-    const userID = generateRandomString();
-    // console.log("userID ", userID);
-    const newUser = {
-        id: userID, 
-        name: name,
-        email: email,
-        password: password
+    if (users[userID].email === email) {
+      confirmedUser = users[userID];
     }
-
-    // console.log('newUser ', newUser);
-    // users[userID] = newUser;
-    // const templateVars = { newUser: id }
-    // console.log("users[userID]" , users[userID]);
-    // console.log("newUser ", newUser);
-    // console.log("users[userID].id" , newUser.id);
+  }
+  if (confirmedUser) {
+    return res.status(400).send('failure - username taken');
+  }
     
-    const addUser = Object.assign(users, { newUser }); //add new user to users database
-    users[newUser.id] = users['newUser']; //update name of newUser to userID
+  const userID = generateRandomString();
+  const newUser = {
+    id: userID,
+    name: name,
+    email: email,
+    password: hash
+  };
 
-    // console.log('users: ', users);
-    
-    res.cookie('email', email);
-    res.cookie('userID', userID);
-    res.cookie('name', name);
-    res.redirect(`/urls`);
+  Object.assign(users, { newUser }); //add new user to users database
+  users[newUser.id] = users['newUser']; //update name of newUser to userID
+
+  console.log('users: ', users);
+  req.session.email = email;
+  req.session.userID = userID;
+  req.session.name = name;
+
+  res.redirect(`/login`);
 });
 
 app.post("/login", (req, res) => {
-    const email = req.body.email;
-    const password = req.body.password;
-    const name = req.body.name;
-    console.log("name ", name);
-    // const name = req.body.name;
-
-    let confirmedUser;
-    let confirmedUserKey;
-
-    for (let userID in users) {
-        if (users[userID].email === email) {
-            confirmedUser = users[userID];
-            confirmedUserKey = userID;
-        } 
-    }
-    if (confirmedUser.password === password) {
-        console.log("Welcome!");
-    } else if (confirmedUser.password !== password) {
-        return res.status(403).send('Wrong combination, please try again.');
-    }
-
-    // console.log("confirmedUserKey" , confirmedUserKey);
-
-    userID = confirmedUserKey;
+  const email = req.body.email;
+  const passwordIn = req.body.password;
+  const name = req.body.name;
     
-    res.cookie('userID', userID);
-    // res.cookie('userKey', confirmedUserKey);
-    res.cookie('name', name);
-    res.redirect(`/urls`);
+  let userID = getUserByEmail(email , users);
+    
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt);
+  const result = bcrypt.compareSync(passwordIn, hash);
+
+  if (result) {
+    console.log("Welcome!");
+  } else if (!result) {
+    return res.status(403).send('Wrong combination, please try again.');
+  }
+    
+  req.session.userID = userID;
+  req.session.name = name;
+  res.redirect(`/urls`);
 });
 
 app.post("/logout", (req, res) => {
-    // console.log("req.cookies.userID ",req.cookies.userID);
-    const userID = req.cookies.userID;
-    // const userKey = req.cookies.userKey
-    const name = req.cookies.name;
-    const email = req.cookies.email;
+  req.session.userID = null;
+  req.session.userKey = null;
+  req.session.name = null;
+  req.session.email = null;
 
-    res.clearCookie('userID', userID);
-    // res.clearCookie('userKey', userKey);
-    res.clearCookie('name', name);
-    res.clearCookie('email', email);
-    res.redirect(`/urls`);
+  res.redirect(`/login`);
 });
 
 app.listen(PORT, () => {
-    console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Example app listening on port ${PORT}!`);
 });
