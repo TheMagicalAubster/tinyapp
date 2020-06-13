@@ -4,7 +4,7 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["Logged In Main Page, Default Values"](./images/LoggedIn.png)
+!["Logged In Main Page, Default Values"](https://github.com/TheMagicalAubster/tinyapp/blob/master/images/LoggedIn.png)
 
 
 ## Dependencies
