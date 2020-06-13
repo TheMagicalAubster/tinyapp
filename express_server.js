@@ -24,6 +24,15 @@ function generateRandomString() {
     return funkyURL;
     }
 
+function urlsForUser(userID) {
+    for(const key in urlDatabase) {
+        // console.log("urlDatabase.key.userID ", urlDatabase[key].userID);
+        if (urlDatabase[key].userID === "user2RandomID") {
+            return true;
+        }
+    }
+}
+
 const users = {
 "userRandomID": {
     id: "userRandomID",
@@ -47,8 +56,8 @@ const users = {
 
 
 const urlDatabase = {
-    b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
-    i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
+    b6UTxQ: { longURL: "https://www.tsn.ca", userID: "user2RandomID" },
+    i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
   };
 
   app.get("/urls/:shortURL/urls", (req, res) => {
@@ -59,16 +68,19 @@ const urlDatabase = {
 app.get("/urls/new", (req, res) => {
     //if someone isn't logged in here, redirect to login page
     const name = req.cookies.name;
+    const user = users[req.cookies.userID];
     // console.log("name", name);
 
     if (!name) {
         return res.redirect('/login');
     }
-    res.render("urls_new");
+
+    let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
+    res.render("urls_new", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-    const user = users[req.cookies.userKey]
+    const user = users[req.cookies.userID]
     // console.log("req.cookies ", req.cookies);
     // console.log("user  ", user);
     const templateVars = { urls: urlDatabase, user };
@@ -81,35 +93,34 @@ app.get("/u/:shortURL", (req, res) => {
   });
 
 app.get("/urls", (req, res) => {   
-    // const test = Object.keys(req.cookies).length;
+    const name = req.cookies.name;
     const user = users[req.cookies.userID];
+    const shortURL = req.params.shortURL;
+    const userID = req.cookies.userID;
+    const longURL = urlDatabase[shortURL];
+    console.log("req.cookies.userID", req.cookies.userID);
+    
+    console.log(urlsForUser(userID));
+    // console.log("shortURL ", shortURL);
     // console.log('user ', user);
-    // console.log("req.cookies.name ", req.cookies.name);
-    if (user) {
-
-        // console.log("user is: ", user);
-        // console.log("req.cookies ", req.cookies);
-
+    if (urlsForUser(userID)) {
+        
         const templateVars = { urls: urlDatabase, user }; //cannot read property 'name' of undefined  , username: user.name
-        // console.log("templateVars ", templateVars);
-
+        console.log("templateVars ", templateVars);
+        
         res.render("urls_index", templateVars); 
     } else {
-        let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
-        res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
+        // let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
+        // res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
+        res.redirect('/login');
     }
 });
 
 
 app.get("/urls/:shortURL", (req, res) => {
     const shortURL = req.params.shortURL;
-
-    // console.log("shortURL" , shortURL);
     const name = req.cookies.name;
-    // console.log("name", name);
-
     const longURL = urlDatabase[shortURL];
-    // let templateVars = { shortURL, longURL }; 
     const user = users[req.cookies.userKey]
     const templateVars = { shortURL, url: urlDatabase[shortURL], user }
     // console.log("templateVars ", templateVars);
@@ -147,14 +158,26 @@ app.post("/urls", (req, res) => {
 
 app.post("/urls/:shortURL/delete", (req, res) => {
     const shortURL = req.params.shortURL;
-    delete urlDatabase[shortURL];
+    const userID = req.cookies.userID;
+    
+    if (urlsForUser(userID)) {
+        delete urlDatabase[shortURL];
+        
+    } else {
+        // let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
+        // res.render("urls_index", templateVars); //this is the file we made in views. This calls it and applies it then?
+        res.redirect('/login');
+    }
     res.redirect('/urls'); 
 });
 
 app.post("/urls/:shortURL", (req, res) => {
+
     const shortURL = req.params.shortURL;
     urlDatabase[shortURL] = req.body.longURL;
-    // console.log(shortURL);
+
+    // console.log("shortURL ", shortURL);
+    console.log("urlDatabase[shortURL] ", urlDatabase[shortURL]);
     res.redirect(`/urls`);
     // console.log("Hello");
 });
@@ -238,7 +261,7 @@ app.post("/login", (req, res) => {
     userID = confirmedUserKey;
     
     res.cookie('userID', userID);
-    res.cookie('userKey', confirmedUserKey);
+    // res.cookie('userKey', confirmedUserKey);
     res.cookie('name', name);
     res.redirect(`/urls`);
 });
@@ -246,12 +269,12 @@ app.post("/login", (req, res) => {
 app.post("/logout", (req, res) => {
     // console.log("req.cookies.userID ",req.cookies.userID);
     const userID = req.cookies.userID;
-    const userKey = req.cookies.userKey
+    // const userKey = req.cookies.userKey
     const name = req.cookies.name;
     const email = req.cookies.email;
 
     res.clearCookie('userID', userID);
-    res.clearCookie('userKey', userKey);
+    // res.clearCookie('userKey', userKey);
     res.clearCookie('name', name);
     res.clearCookie('email', email);
     res.redirect(`/urls`);
