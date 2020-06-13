@@ -45,21 +45,21 @@ const users = {
 //     "9sm5xK": "http://www.google.com"
 // };
 
+
 const urlDatabase = {
     b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
     i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
   };
 
   app.get("/urls/:shortURL/urls", (req, res) => {
-    // let templateVars = { urls: urlDatabase }; //this is the urlDatabase from above
-    // console.log('urls_index: ', urls_index);
+  
     res.render("urls_index");
  });
 
 app.get("/urls/new", (req, res) => {
     //if someone isn't logged in here, redirect to login page
     const name = req.cookies.name;
-    console.log("name", name);
+    // console.log("name", name);
 
     if (!name) {
         return res.redirect('/login');
@@ -69,13 +69,13 @@ app.get("/urls/new", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
     const user = users[req.cookies.userKey]
-    console.log("req.cookies ", req.cookies);
-    console.log("user  ", user);
+    // console.log("req.cookies ", req.cookies);
+    // console.log("user  ", user);
     const templateVars = { urls: urlDatabase, user };
     const shortURL = req.params.shortURL;
    
     const longURL = urlDatabase[shortURL].longURL;
-    console.log("longURL:: ", longURL);
+    // console.log("longURL:: ", longURL);
 
     res.redirect(longURL);
   });
@@ -84,14 +84,14 @@ app.get("/urls", (req, res) => {
     // const test = Object.keys(req.cookies).length;
     const user = users[req.cookies.userID];
     // console.log('user ', user);
-    console.log("req.cookies.name ", req.cookies.name);
+    // console.log("req.cookies.name ", req.cookies.name);
     if (user) {
 
-        console.log("user is: ", user);
-        console.log("req.cookies ", req.cookies);
+        // console.log("user is: ", user);
+        // console.log("req.cookies ", req.cookies);
 
         const templateVars = { urls: urlDatabase, user }; //cannot read property 'name' of undefined  , username: user.name
-        console.log("templateVars ", templateVars);
+        // console.log("templateVars ", templateVars);
 
         res.render("urls_index", templateVars); 
     } else {
@@ -104,15 +104,15 @@ app.get("/urls", (req, res) => {
 app.get("/urls/:shortURL", (req, res) => {
     const shortURL = req.params.shortURL;
 
-    console.log("shortURL" , shortURL);
+    // console.log("shortURL" , shortURL);
     const name = req.cookies.name;
-    console.log("name", name);
+    // console.log("name", name);
 
     const longURL = urlDatabase[shortURL];
     // let templateVars = { shortURL, longURL }; 
     const user = users[req.cookies.userKey]
     const templateVars = { shortURL, url: urlDatabase[shortURL], user }
-    console.log("templateVars ", templateVars);
+    // console.log("templateVars ", templateVars);
     res.render("urls_show", templateVars); 
 });
 
@@ -185,7 +185,7 @@ app.post("/registration", (req, res) => {
     }
     
     const userID = generateRandomString();
-    console.log("userID ", userID);
+    // console.log("userID ", userID);
     const newUser = {
         id: userID, 
         name: name,
@@ -193,13 +193,19 @@ app.post("/registration", (req, res) => {
         password: password
     }
 
-    console.log('newUser ', newUser);
-    users[userID] = newUser;
+    // console.log('newUser ', newUser);
+    // users[userID] = newUser;
     // const templateVars = { newUser: id }
-
-    console.log("users[userID].id" , users[userID].id);
+    // console.log("users[userID]" , users[userID]);
+    // console.log("newUser ", newUser);
+    // console.log("users[userID].id" , newUser.id);
     
-    // console.log("templateVars ", templateVars);
+    const addUser = Object.assign(users, { newUser }); //add new user to users database
+    users[newUser.id] = users['newUser']; //update name of newUser to userID
+
+    // console.log('users: ', users);
+    
+    res.cookie('email', email);
     res.cookie('userID', userID);
     res.cookie('name', name);
     res.redirect(`/urls`);
@@ -227,9 +233,9 @@ app.post("/login", (req, res) => {
         return res.status(403).send('Wrong combination, please try again.');
     }
 
-    const userId = generateRandomString();
+    // console.log("confirmedUserKey" , confirmedUserKey);
 
-    confirmedUser.userID = userID;
+    userID = confirmedUserKey;
     
     res.cookie('userID', userID);
     res.cookie('userKey', confirmedUserKey);
@@ -238,13 +244,16 @@ app.post("/login", (req, res) => {
 });
 
 app.post("/logout", (req, res) => {
-    console.log("req.cookies.userID ",req.cookies.userID);
+    // console.log("req.cookies.userID ",req.cookies.userID);
     const userID = req.cookies.userID;
     const userKey = req.cookies.userKey
     const name = req.cookies.name;
+    const email = req.cookies.email;
+
     res.clearCookie('userID', userID);
     res.clearCookie('userKey', userKey);
     res.clearCookie('name', name);
+    res.clearCookie('email', email);
     res.redirect(`/urls`);
 });
 
