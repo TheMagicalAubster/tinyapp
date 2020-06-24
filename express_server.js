@@ -4,6 +4,7 @@ const getUserByEmail = require('./helpers');
 const cookieSession = require('cookie-session');
 const morgan = require('morgan');
 const bcrypt = require('bcrypt');
+const { use } = require("chai");
 const password = '1234';
 const hashedPassword = bcrypt.hashSync(password, 10);
 const app = express();
@@ -23,11 +24,13 @@ function generateRandomString() {
 }
 
 function urlsForUser(userID) {
+  const result = {};
   for (const key in urlDatabase) {
-    if (urlDatabase[key].userID === "user2RandomID") {
-      return true;
+    if (urlDatabase[key].userID === userID) { //this shouldn't be hardcoded as user2ID, this should be the one logging in
+      result[key] = urlDatabase[key];
     }
-  }
+  } 
+  return result;
 }
 
 const users = {
@@ -42,6 +45,13 @@ const users = {
     name: "name2",
     email: "user2@example.com",
     password: password
+  },
+
+  "user3RandomID": {
+    id: "user3RandomID",
+    name: "name3",
+    email: "user3@example.com",
+    password: password
   }
 };
 
@@ -50,10 +60,6 @@ const urlDatabase = {
   i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
 };
 
-app.get("/urls/:shortURL/urls", (req, res) => {
-  
-  res.render("urls_index");
-});
 
 app.get("/urls/new", (req, res) => {
   //if someone isn't logged in here, redirect to login page
@@ -79,20 +85,24 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls", (req, res) => {
   const user = users[req.session.userID];
   const userID = req.session.userID;
-    
-  if (urlsForUser(userID)) {
-    const templateVars = { urls: urlDatabase, user }; 
+    console.log("userID", userID);
+  if (userID) {
+    const templateVars = { urls: urlsForUser(userID), user }; 
         
-    res.render("urls_index", templateVars);
+    res.render("urls_index", templateVars); //should be sending the results of urlsForUser
   } else {
-    res.redirect('/login');
+    res.redirect('/login?err=1');
   }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
   const user = users[req.session.userID];
-  const templateVars = { shortURL, url: urlDatabase[shortURL], user };
+  const url = urlDatabase[shortURL];
+  if (url.userID !== user.id) {
+    return res.redirect('/urls');
+  }
+  const templateVars = { shortURL, url, user };
 
   res.render("urls_show", templateVars);
 });
@@ -102,7 +112,8 @@ app.get("/urls.json", (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  const templateVars = { user: undefined };
+  
+  const templateVars = { user: undefined, err: req.query.err };
   res.render('login', templateVars);
 });
 
@@ -143,9 +154,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:shortURL", (req, res) => {
   const shortURL = req.params.shortURL;
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL].longURL = req.body.longURL;
 
-  res.redirect(`/urls`);
+  res.redirect(`/urls/${shortURL}`);
 });
 
 app.post("/registration", (req, res) => {
@@ -189,7 +200,7 @@ app.post("/registration", (req, res) => {
   req.session.userID = userID;
   req.session.name = name;
 
-  res.redirect(`/login`);
+  res.redirect(`/urls`);
 });
 
 app.post("/login", (req, res) => {
