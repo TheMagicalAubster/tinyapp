@@ -25,9 +25,12 @@ function generateRandomString() {
 
 function urlsForUser(userID) {
   const result = {};
+
   for (const key in urlDatabase) {
-    if (urlDatabase[key].userID === userID) { //this shouldn't be hardcoded as user2ID, this should be the one logging in
-      result[key] = urlDatabase[key];
+    console.log("urlsForUser urlDatabase[key] value is: ", urlDatabase[key]);
+    
+    if (urlDatabase[key].userID === userID) { 
+    result[key] = urlDatabase[key];
     }
   } 
   return result;
@@ -38,13 +41,13 @@ const users = {
     id: "userRandomID",
     name: "name1",
     email: "user@example.com",
-    password: password
+    password: 1234
   },
   "user2RandomID": {
     id: "user2RandomID",
     name: "name2",
     email: "user2@example.com",
-    password: password
+    password: 1234
   },
 
   "user3RandomID": {
@@ -63,11 +66,12 @@ const urlDatabase = {
 
 app.get("/urls/new", (req, res) => {
   //if someone isn't logged in here, redirect to login page
-  const name = req.session.name;
+  // const name = req.session.name;
+  const email= req.session.email;
   const user = users[req.session.userID];
-  // console.log("name", name);
+  // console.log("user", user);
 
-  if (!name) {
+  if (!user) {
     return res.redirect('/login');
   }
 
@@ -85,9 +89,12 @@ app.get("/u/:shortURL", (req, res) => {
 app.get("/urls", (req, res) => {
   const user = users[req.session.userID];
   const userID = req.session.userID;
-    console.log("userID", userID);
+    console.log("userID and user is ", userID, user);
   if (userID) {
+    const urls = urlsForUser(userID);
+    console.log("URLS being returned are: ", urls);
     const templateVars = { urls: urlsForUser(userID), user }; 
+    console.log("templateVars in the /urls get is here: ", templateVars);
         
     res.render("urls_index", templateVars); //should be sending the results of urlsForUser
   } else {
@@ -123,12 +130,17 @@ app.get("/registration", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Hello");
+  const user = users[req.session.userID];
+  const userID = req.session.userID;
+  if (userID) {
+    const templateVars = { urls: urlsForUser(userID), user }; 
+        
+    res.render("urls_index", templateVars); //should be sending the results of urlsForUser
+  } else {
+    res.redirect('/login?err=1');
+  }
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
@@ -162,32 +174,23 @@ app.post("/urls/:shortURL", (req, res) => {
 app.post("/registration", (req, res) => {
   const email = req.body.email;
   const password = req.body.password; //password coming from input
-  const name = req.body.name;
 
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync(password, salt);
 
-  let confirmedUser;
-
   for (const userID in users) {
     if (users[userID].email === "") {
-      return res.status(400).send('email cannot be empty');
-    }
-    if (confirmedUser) {
-      return res.status(400).send('email already in use');
+      return res.status(400).send('Please enter an email');
     }
     if (users[userID].email === email) {
-      confirmedUser = users[userID];
+      return res.status(400).send('email already in use');
     }
+ 
   }
-  if (confirmedUser) {
-    return res.status(400).send('failure - username taken');
-  }
-    
+  
   const userID = generateRandomString();
   const newUser = {
     id: userID,
-    name: name,
     email: email,
     password: hash
   };
@@ -195,40 +198,41 @@ app.post("/registration", (req, res) => {
   Object.assign(users, { newUser }); //add new user to users database
   users[newUser.id] = users['newUser']; //update name of newUser to userID
 
-  console.log('users: ', users);
   req.session.email = email;
   req.session.userID = userID;
-  req.session.name = name;
-
+  
   res.redirect(`/urls`);
 });
 
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const passwordIn = req.body.password;
-  const name = req.body.name;
-    
+  
   let userID = getUserByEmail(email , users);
-    
+  console.log("userID >>>>> ", userID);
+  
+  
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync(password, salt);
   const result = bcrypt.compareSync(passwordIn, hash);
-
+  
   if (result) {
-    console.log("Welcome!");
-  } else if (!result) {
+    req.session.userID = userID;
+    req.session.email = email;
+    res.redirect(`/urls`);
+  } else {
     return res.status(403).send('Wrong combination, please try again.');
   }
     
-  req.session.userID = userID;
-  req.session.name = name;
-  res.redirect(`/urls`);
+  
+  // req.session.name = name;
+  
 });
 
 app.post("/logout", (req, res) => {
   req.session.userID = null;
   req.session.userKey = null;
-  req.session.name = null;
+  // req.session.name = null;
   req.session.email = null;
 
   res.redirect(`/login`);
