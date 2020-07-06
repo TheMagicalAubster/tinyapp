@@ -75,7 +75,8 @@ app.get("/urls/new", (req, res) => {
     return res.redirect('/login');
   }
 
-  let templateVars = { urls: urlDatabase, user }; //this is the urlDatabase from above
+  let templateVars = { urls: urlDatabase, user }; 
+  console.log("templateVars from /urls/new: ", templateVars);
   res.render("urls_new", templateVars);
 });
 
@@ -199,6 +200,7 @@ app.post("/registration", (req, res) => {
   users[newUser.id] = users['newUser']; //update name of newUser to userID
 
   req.session.email = email;
+  console.log('email from req.post(registration) is ', email);
   req.session.userID = userID;
   
   res.redirect(`/urls`);
