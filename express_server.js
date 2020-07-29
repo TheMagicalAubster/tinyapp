@@ -76,6 +76,7 @@ app.get("/urls/new", (req, res) => {
   }
 
   let templateVars = { urls: urlDatabase, user }; 
+
   console.log("templateVars from /urls/new: ", templateVars);
   res.render("urls_new", templateVars);
 });
@@ -145,7 +146,7 @@ app.get("/", (req, res) => {
 
 app.post("/urls", (req, res) => {
   let shortURL = generateRandomString();
-  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.userKey };
+  urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.userID };
   res.redirect(`/urls/${shortURL}`);
     
 });
